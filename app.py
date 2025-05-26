@@ -93,10 +93,6 @@ if uploaded_file is not None:
         submitted = st.form_submit_button("予測する")
 
     if submitted:
-        st.write("予測処理開始")
-        st.write(input_data)
-        st.write(f"予測タイム: {pred_time}, 予測スコア: {pred_score}")
-
         month = pred_date.month
         dayofweek = pred_date.weekday()
         days_since_start = (pred_date - start_date).days
@@ -111,6 +107,9 @@ if uploaded_file is not None:
             'days_since_start': days_since_start
         }])
 
+        st.write("予測処理開始")
+        st.write(input_data)
+        
         pred_time = model_time.predict(input_data)[0]
         pred_score = model_score.predict(input_data)[0]
 
