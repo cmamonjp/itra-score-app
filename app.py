@@ -27,11 +27,14 @@ if uploaded_file is not None:
     ax1.set_ylabel("ITRA Score", color='blue')
     ax1.tick_params(axis='y', labelcolor='blue')
 
-    # ITRA Score Y-axis ticks: from min to max with step 5 (adjust if needed)
+    # Y-axis ticks and limits for ITRA Score
     min_score = int(df['itra_score'].min() // 5 * 5)
     max_score = int((df['itra_score'].max() + 4) // 5 * 5)
     ax1.set_ylim(min_score, max_score)
     ax1.yaxis.set_major_locator(ticker.MultipleLocator(5))
+    ax1.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+    ax1.grid(which='major', axis='y', color='lightblue', linestyle='--', linewidth=0.8)
+    ax1.grid(which='minor', axis='y', color='lightblue', linestyle=':', linewidth=0.5)
 
     # Growth rate bar plot with secondary y-axis
     ax2 = ax1.twinx()
@@ -39,14 +42,15 @@ if uploaded_file is not None:
     ax2.set_ylabel("Growth Rate (%)", color='orange')
     ax2.tick_params(axis='y', labelcolor='orange')
 
-    # Growth rate Y-axis range fixed to -10% to 10%
     ax2.set_ylim(-10, 10)
     ax2.yaxis.set_major_locator(ticker.MultipleLocator(5))
     ax2.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+    ax2.grid(which='major', axis='y', color='navajowhite', linestyle='--', linewidth=0.8)
+    ax2.grid(which='minor', axis='y', color='navajowhite', linestyle=':', linewidth=0.5)
 
     plt.title("ITRA Score Progress and Growth Rate Over Time")
     plt.xticks(rotation=45)
-
+    
     lines, labels = ax1.get_legend_handles_labels()
     bars, bar_labels = ax2.get_legend_handles_labels()
     ax1.legend(lines + bars, labels + bar_labels, loc='upper left')
