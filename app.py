@@ -15,7 +15,7 @@ def load_sample_csv():
         r.raise_for_status()
         return r.content
     except requests.RequestException:
-        st.error("サンプルCSVのダウンロードに失敗しました。ネット接続を確認してね。")
+        st.error("Failed to download the sample CSV. Please check your internet connection.")
         return None
 
 csv_bytes = load_sample_csv()
@@ -33,7 +33,7 @@ if uploaded_file:
     try:
         df = pd.read_csv(uploaded_file, parse_dates=["date"])
         if not {'date', 'itra_score'}.issubset(df.columns):
-            st.error("CSVファイルには 'date' と 'itra_score' の両方の列が必要です。")
+            st.error("The CSV file must contain both 'date' and 'itra_score' columns.")
         else:
             df = df.sort_values("date").reset_index(drop=True)
 
@@ -80,4 +80,4 @@ if uploaded_file:
             )
 
     except Exception as e:
-        st.error(f"ファイルの読み込みまたは処理中にエラーが発生しました: {e}")
+        st.error(f"Error loading or processing file: {e}")
