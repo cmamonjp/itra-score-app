@@ -2,12 +2,11 @@
 
 ## Sample Data
 
-To quickly try out the app, you can download the sample CSV file here:
+You can download a sample CSV file to try the app with example data:
 
-[data_itra_n30.csv](https://github.com/cmamonjp/itra-score-app/raw/main/data_itra_n30.csv)
+- [data_itra_n30.csv](https://github.com/cmamonjp/itra-score-app/blob/main/data_itra_n30.csv) (View on GitHub)
 
-The CSV includes `date` and `itra_score` columns for testing the score transition and growth rate visualization.
-
+> **Note:** To directly download the sample CSV, please use the "Download Sample CSV" button inside the app for the best experience.
 
 ## License
 
