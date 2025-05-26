@@ -4,44 +4,59 @@ import numpy as np
 import mplfinance as mpf
 import matplotlib.pyplot as plt
 
-st.set_page_config(layout="wide")
 st.title("🏃‍♂️ ITRA Score Growth Rate Candlestick Chart")
-
-uploaded_file = st.file_uploader("Upload your CSV file", type="csv")
+uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 
 if uploaded_file is not None:
+    # CSV読み込み
     df = pd.read_csv(uploaded_file)
-    required_cols = {'date', 'itra_score'}
-    if not required_cols.issubset(df.columns):
-        st.error(f"CSV must contain columns: {', '.join(required_cols)}")
-    else:
-        df['date'] = pd.to_datetime(df['date'], errors='coerce')
-        df = df.dropna(subset=['date', 'itra_score'])  # 日付やスコアに欠損あれば削除
-        df = df.sort_values('date').reset_index(drop=True)
 
-        # 成長率計算
-        df['growth_rate'] = df['itra_score'].pct_change() * 100
-        df = df.dropna(subset=['growth_rate'])  # 最初のNaN行を削除
+    # 日付カラムが 'date' ならdatetime化（名前が違ったら適宜変更）
+    df['date'] = pd.to_datetime(df['date'])
 
-        # ローソク足用の値を作成
-        open_ = df['growth_rate'].shift(1).fillna(method='bfill')
-        close_ = df['growth_rate']
-        high_ = np.maximum(open_, close_) + 0.1  # ±少し幅をもたせる
-        low_ = np.minimum(open_, close_) - 0.1
+    # 'itra_score'がある前提で成長率計算
+    df['growth_rate'] = df['itra_score'].pct_change() * 100
 
-        ohlc = pd.DataFrame({
-            'Open': open_,
-            'High': high_,
-            'Low': low_,
-            'Close': close_
-        }, index=df['date'])
+    # growth_rateにNaNがあれば除去（先頭行など）
+    df = df.dropna(subset=['growth_rate'])
 
-        # tz情報を完全に落とす
-        ohlc.index = pd.to_datetime(ohlc.index).tz_localize(None)
+    # open, closeの計算
+    open_ = df['growth_rate'].shift(1).fillna(method='bfill')
+    close_ = df['growth_rate']
 
-        fig, ax = plt.subplots(figsize=(12, 6))
-        mpf.plot(ohlc, type='candle', style='charles', ax=ax, tight_layout=True)
-        st.pyplot(fig)
+    # InfやNaNがあれば補正
+    open_ = open_.replace([np.inf, -np.inf], np.nan).fillna(method='bfill')
+    close_ = close_.replace([np.inf, -np.inf], np.nan).fillna(method='bfill')
 
-else:
-    st.info("Please upload a CSV file to get started.")
+    # 高値・安値を上下0.1ずつオフセットして設定
+    high_ = np.maximum(open_, close_) + 0.1
+    low_ = np.minimum(open_, close_) - 0.1
+
+    # OHLCデータフレーム作成
+    ohlc = pd.DataFrame({
+        'Open': open_,
+        'High': high_,
+        'Low': low_,
+        'Close': close_
+    }, index=df['date'])
+
+    # ohlcにNaNやInfがあれば除去
+    ohlc = ohlc.replace([np.inf, -np.inf], np.nan).dropna()
+
+    # プロット用のFigureとAxesを準備
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # mplfinanceでローソク足描画
+    mpf.plot(
+        ohlc,
+        type='candle',
+        style='charles',
+        ax=ax,
+        tight_layout=True,
+        title="Growth Rate Candlestick Chart",
+        ylabel='Growth Rate (%)',
+        show_nontrading=True
+    )
+
+    # Streamlitで表示
+    st.pyplot(fig)
