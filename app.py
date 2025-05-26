@@ -22,17 +22,16 @@ def load_sample_csv():
 csv_bytes = load_sample_csv()
 
 if csv_bytes:
-    st.download_button(
-        label="Download Sample CSV",
-        data=csv_bytes,
-        file_name="data_itra_n30.csv",
-        mime="text/csv"
-    )
-
-    # サンプルCSVのプレビュー表示
     df_sample = pd.read_csv(io.BytesIO(csv_bytes), parse_dates=["date"])
     st.write("### Sample CSV Preview")
     st.dataframe(df_sample.head(3))
+
+    st.download_button(
+    label="Download Sample CSV",
+    data=csv_bytes,
+    file_name="data_itra_n30.csv",
+    mime="text/csv"
+    )
 
 st.markdown("---")
 st.markdown("### Please upload your CSV file")
