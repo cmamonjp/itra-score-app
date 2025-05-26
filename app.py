@@ -13,7 +13,11 @@ if uploaded_file:
     # 成長率の計算（前日比％）
     df['growth_rate'] = df['itra_score'].pct_change() * 100
 
+    # NaNを含む行を削除（成長率計算のため最初の行がNaNになる）
+    df = df.dropna(subset=['growth_rate']).reset_index(drop=True)
+
     fig, ax1 = plt.subplots(figsize=(10, 6))
+    plt.style.use('dark_background')
 
     # ITRA Scoreの折れ線グラフ
     ax1.plot(df['date'], df['itra_score'], color='#1f77b4', label='ITRA Score')
@@ -23,7 +27,8 @@ if uploaded_file:
 
     # 成長率は棒グラフで（負の成長も見やすく）
     ax2 = ax1.twinx()
-    ax2.bar(df['date'], df['growth_rate'], width=5, alpha=0.3, color='#ff7f0e', label='Growth Rate (%)')
+    width = pd.Timedelta(days=10)  # 日付のスケールに合わせた棒の幅
+    ax2.bar(df['date'], df['growth_rate'], width=width, alpha=0.3, color='#ff7f0e', label='Growth Rate (%)')
     ax2.set_ylabel('Growth Rate (%)', color='#ff7f0e')
     ax2.tick_params(axis='y', labelcolor='#ff7f0e')
 
