@@ -33,6 +33,10 @@ if csv_bytes:
     st.write("### Sample CSV Preview")
     st.dataframe(df_sample.head(3))
 
+st.markdown("---")
+st.markdown("### Please upload your CSV file")
+st.markdown("**Note:** Your file must contain the columns `date` and `itra_score`.")
+
 uploaded_file = st.file_uploader("### Upload your CSV file (date, itra_score)", type=["csv"])
 if uploaded_file:
     try:
