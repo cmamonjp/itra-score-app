@@ -1,44 +1,45 @@
 import streamlit as st
 import pandas as pd
-import mplfinance as mpf
+import matplotlib.pyplot as plt
 
-st.title("🏃‍♂️ ITRA Score Growth Rate Candlestick Chart")
+st.title("🏃‍♂️ ITRA Score & Growth Rate Chart")
 
-# CSVアップロード
 uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 
-if uploaded_file is not None:
+if uploaded_file:
     # CSV読み込み
-    df = pd.read_csv(uploaded_file)
+    df = pd.read_csv(uploaded_file, parse_dates=['date'])
     
-    # 日付型に変換
-    df['date'] = pd.to_datetime(df['date'], format='%Y/%m/%d')
-    df.set_index('date', inplace=True)
+    # 日付昇順にソート
+    df = df.sort_values('date')
     
-    # mplfinance用のOHLCデータ作成（仮にopen/high/low/closeをITRAスコアの成長率から作る）
-    # ここでは例として、前日との差分を元にcandlestick用に加工
-    df['close'] = df['itra_score']
-    df['open'] = df['itra_score'].shift(1)  # 前日のitra_score
-    df['high'] = df[['open', 'close']].max(axis=1)
-    df['low'] = df[['open', 'close']].min(axis=1)
-
-    # NaNがある行は削除（shiftで最初のopenがNaNになるため）
-    ohlc = df[['open', 'high', 'low', 'close']].dropna()
+    # 成長率（前回比％）計算
+    df['growth_rate'] = df['itra_score'].pct_change() * 100
     
-    # 描画
-    st.write("## Candlestick Chart")
-    fig, ax = mpf.plot(
-        ohlc,
-        type='candle',
-        style='charles',
-        figsize=(12,6),
-        title="ITRA Score Growth Rate Candlestick Chart",
-        ylabel="ITRA Score",
-        tight_layout=True,
-        returnfig=True,
-        show_nontrading=True
-    )
+    fig, ax1 = plt.subplots(figsize=(12,6))
+    
+    # 折れ線：ITRAスコア
+    ax1.plot(df['date'], df['itra_score'], color='blue', marker='o', label='ITRA Score')
+    ax1.set_xlabel('Date')
+    ax1.set_ylabel('ITRA Score', color='blue')
+    ax1.tick_params(axis='y', labelcolor='blue')
+    
+    # 2軸目を作成
+    ax2 = ax1.twinx()
+    # 棒グラフ：成長率
+    ax2.bar(df['date'], df['growth_rate'], color='orange', alpha=0.5, label='Growth Rate (%)')
+    ax2.set_ylabel('Growth Rate (%)', color='orange')
+    ax2.tick_params(axis='y', labelcolor='orange')
+    
+    # タイトルと凡例
+    plt.title('ITRA Score & Growth Rate Over Time')
+    fig.tight_layout()
+    
+    # 凡例をまとめて表示
+    lines_1, labels_1 = ax1.get_legend_handles_labels()
+    lines_2, labels_2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper left')
     
     st.pyplot(fig)
 else:
-    st.info("CSVファイルをアップロードしてください。")
+    st.info("Please upload a CSV file containing 'date' and 'itra_score' columns.")
