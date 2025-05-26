@@ -12,25 +12,26 @@ if uploaded_file:
 
     # 成長率の計算（前日比％）
     df['growth_rate'] = df['itra_score'].pct_change() * 100
-
-    # NaNを含む行を削除（成長率計算のため最初の行がNaNになる）
     df = df.dropna(subset=['growth_rate']).reset_index(drop=True)
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
-    plt.style.use('dark_background')
+    fig.patch.set_facecolor('white')  # 背景白に設定
+    ax1.set_facecolor('white')         # グラフの背景も白に
 
-    # ITRA Scoreの折れ線グラフ
+    # ITRA Scoreの折れ線グラフ（グリッドなし）
     ax1.plot(df['date'], df['itra_score'], color='#1f77b4', label='ITRA Score')
     ax1.set_xlabel('Date')
     ax1.set_ylabel('ITRA Score', color='#1f77b4')
     ax1.tick_params(axis='y', labelcolor='#1f77b4')
+    ax1.grid(False)  # グリッドOFF
 
-    # 成長率は棒グラフで（負の成長も見やすく）
+    # 成長率は棒グラフで（負の成長も見やすく）、こっちだけグリッドON
     ax2 = ax1.twinx()
-    width = pd.Timedelta(days=10)  # 日付のスケールに合わせた棒の幅
+    width = pd.Timedelta(days=10)
     ax2.bar(df['date'], df['growth_rate'], width=width, alpha=0.3, color='#ff7f0e', label='Growth Rate (%)')
     ax2.set_ylabel('Growth Rate (%)', color='#ff7f0e')
     ax2.tick_params(axis='y', labelcolor='#ff7f0e')
+    ax2.grid(True, axis='y', linestyle='--', alpha=0.5)  # 成長率用グリッドのみON
 
     # 凡例をグラフ外右上に配置
     lines, labels = ax1.get_legend_handles_labels()
