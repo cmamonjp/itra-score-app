@@ -27,14 +27,14 @@ if uploaded_file is not None:
     st.subheader("📐 相関分析ヒートマップ（数値列のみ）")
 
     # --- 相関分析用の計算 ---
-    cols_to_use = ['itra_score', 'distance', 'elevation', 'temp', 'time_h', 'course_condition']
+    cols_to_use = ['itra_score', 'temp', 'time_h', 'course_condition']
     corr = df[cols_to_use].corr()
 
     # --- ITRAスコアとの相関のみ抽出 ---
     corr_itra = corr.loc['itra_score', :].drop('itra_score')  # itra_score自身は除外
 
     fig2, ax2 = plt.subplots(figsize=(8, 4))
-    bars = ax2.bar(corr_itra.index, corr_itra.values, color=['skyblue', 'salmon', 'limegreen', 'orange', 'purple'])
+    bars = ax2.bar(corr_itra.index, corr_itra.values, color=['skyblue', 'salmon', 'limegreen'])
     
     ax2.set_ylim(-1, 1)
     ax2.set_ylabel("Correlation with ITRA Score")
