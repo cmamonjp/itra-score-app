@@ -8,45 +8,69 @@ st.title("🏃‍♂️ ITRA Score Growth Rate Candlestick Chart")
 uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 
 if uploaded_file is not None:
-    # CSV読み込み
     df = pd.read_csv(uploaded_file)
-
-    # 日付カラムが 'date' ならdatetime化（名前が違ったら適宜変更）
     df['date'] = pd.to_datetime(df['date'])
-
-    # 'itra_score'がある前提で成長率計算
+    
+    # 元データ確認
+    st.write("Raw data preview:", df.head())
+    st.write("Total rows:", len(df))
+    
+    # 成長率計算
     df['growth_rate'] = df['itra_score'].pct_change() * 100
-
-    # growth_rateにNaNがあれば除去（先頭行など）
+    st.write("After pct_change, growth_rate preview:", df['growth_rate'].head())
+    
+    # NaNの数も確認
+    st.write("NaN count in growth_rate:", df['growth_rate'].isna().sum())
+    
+    # NaN削除前の行数を記録
+    before_drop = len(df)
+    
+    # NaN削除
     df = df.dropna(subset=['growth_rate'])
-
-    # open, closeの計算
-    open_ = df['growth_rate'].shift(1).fillna(method='bfill')
+    after_drop = len(df)
+    st.write(f"Rows before dropna: {before_drop}, after dropna: {after_drop}")
+    
+    if after_drop == 0:
+        st.error("成長率計算後、データが全て消えてしまいました。入力データを確認してください。")
+        st.stop()
+    
+    # open/close作成
+    open_ = df['growth_rate'].shift(1)
     close_ = df['growth_rate']
-
-    # InfやNaNがあれば補正
-    open_ = open_.replace([np.inf, -np.inf], np.nan).fillna(method='bfill')
-    close_ = close_.replace([np.inf, -np.inf], np.nan).fillna(method='bfill')
-
-    # 高値・安値を上下0.1ずつオフセットして設定
+    
+    # fillnaはbfillじゃなくてffillにしてみる
+    open_ = open_.replace([np.inf, -np.inf], np.nan).fillna(method='ffill')
+    close_ = close_.replace([np.inf, -np.inf], np.nan).fillna(method='ffill')
+    
+    # もう一回NaN確認
+    st.write("NaN in open_ after fillna:", open_.isna().sum())
+    st.write("NaN in close_ after fillna:", close_.isna().sum())
+    
+    # Nanが残ってたらエラーで止める
+    if open_.isna().sum() > 0 or close_.isna().sum() > 0:
+        st.error("openまたはcloseにNaNが残っています。入力データを確認してください。")
+        st.stop()
+    
     high_ = np.maximum(open_, close_) + 0.1
     low_ = np.minimum(open_, close_) - 0.1
-
-    # OHLCデータフレーム作成
+    
     ohlc = pd.DataFrame({
         'Open': open_,
         'High': high_,
         'Low': low_,
         'Close': close_
     }, index=df['date'])
-
-    # ohlcにNaNやInfがあれば除去
+    
+    # ohlcのNaN/Inf除去
     ohlc = ohlc.replace([np.inf, -np.inf], np.nan).dropna()
-
-    # プロット用のFigureとAxesを準備
+    st.write(f"OHLC data rows after dropna: {len(ohlc)}")
+    
+    if len(ohlc) == 0:
+        st.error("OHLCデータが空になりました。入力データを見直してください。")
+        st.stop()
+    
     fig, ax = plt.subplots(figsize=(12, 6))
-
-    # mplfinanceでローソク足描画
+    
     mpf.plot(
         ohlc,
         type='candle',
@@ -57,6 +81,4 @@ if uploaded_file is not None:
         ylabel='Growth Rate (%)',
         show_nontrading=True
     )
-
-    # Streamlitで表示
     st.pyplot(fig)
