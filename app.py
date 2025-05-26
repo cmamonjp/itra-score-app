@@ -3,20 +3,33 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-plt.style.use('dark_background')
+st.title("ITRA Score と成長率の推移グラフ")
 
-def plot_dual_axis(df, var, color_map):
-    fig, ax1 = plt.subplots(figsize=(10, 4))
+uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=['csv'])
+if uploaded_file:
+    df = pd.read_csv(uploaded_file)
+    df['date'] = pd.to_datetime(df['date'])
+    df = df.sort_values('date').reset_index(drop=True)
+
+    # 成長率（%）を計算（前回との差分÷前回値×100）
+    df['growth_rate'] = df['itra_score'].pct_change() * 100
+
+    fig, ax1 = plt.subplots(figsize=(10, 5))
+    plt.style.use('dark_background')
+
+    # ITRA Score（左軸）
     ax1.plot(df['date'], df['itra_score'], label='ITRA Score', color='#1f77b4', linewidth=2)
     ax1.set_ylabel('ITRA Score', color='#1f77b4')
     ax1.tick_params(axis='y', colors='#1f77b4')
     ax1.grid(True, linestyle='--', alpha=0.3)
 
+    # 成長率（右軸）
     ax2 = ax1.twinx()
-    ax2.plot(df['date'], df[var], label=var.capitalize(), color=color_map[var], linewidth=2)
-    ax2.set_ylabel(var.capitalize(), color=color_map[var])
-    ax2.tick_params(axis='y', colors=color_map[var])
+    ax2.bar(df['date'], df['growth_rate'], label='Growth Rate (%)', color='#d62728', alpha=0.6)
+    ax2.set_ylabel('Growth Rate (%)', color='#d62728')
+    ax2.tick_params(axis='y', colors='#d62728')
 
+    # 凡例を枠外に配置
     lines_1, labels_1 = ax1.get_legend_handles_labels()
     lines_2, labels_2 = ax2.get_legend_handles_labels()
     ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper left', bbox_to_anchor=(1.05, 1))
@@ -25,39 +38,4 @@ def plot_dual_axis(df, var, color_map):
     fig.autofmt_xdate()
     plt.tight_layout()
 
-    return fig
-
-def main():
-    st.title("ITRA Score & Variables Visualization")
-
-    uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=['csv'])
-    if not uploaded_file:
-        st.info("まずCSVファイルをアップロードしてください。")
-        return
-
-    df = pd.read_csv(uploaded_file)
-    df['date'] = pd.to_datetime(df['date'])
-    df = df.sort_values('date').reset_index(drop=True)
-
-    variables = ['growth_rate', 'distance', 'elevation', 'temp', 'time_h']
-    color_map = {
-        'growth_rate': '#d62728',
-        'distance': '#ff7f0e',
-        'elevation': '#2ca02c',
-        'temp': '#9467bd',
-        'time_h': '#8c564b'
-    }
-
-    # 表示変数選択
-    selected_vars = st.multiselect(
-        "表示する変数を選択してください (ITRA Scoreは常に表示されます)",
-        variables,
-        default=variables
-    )
-
-    for var in selected_vars:
-        fig = plot_dual_axis(df, var, color_map)
-        st.pyplot(fig)
-
-if __name__ == "__main__":
-    main()
+    st.pyplot(fig)
