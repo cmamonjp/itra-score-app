@@ -3,7 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-# データ読み込み・前処理は省略
+plt.style.use('dark_background')  # ここで一回だけ
+
+# dfの前処理例（必須）
+df['date'] = pd.to_datetime(df['date'])
+df = df.sort_values('date').reset_index(drop=True)
 
 variables = ['growth_rate', 'distance', 'elevation', 'temp', 'time_h']
 color_map = {
@@ -15,8 +19,7 @@ color_map = {
 }
 
 for var in variables:
-    fig, ax1 = plt.subplots(figsize=(10,4))
-    plt.style.use('dark_background')
+    fig, ax1 = plt.subplots(figsize=(10, 4))
 
     ax1.plot(df['date'], df['itra_score'], label='ITRA Score', color='#1f77b4', linewidth=2)
     ax1.set_ylabel('ITRA Score', color='#1f77b4')
@@ -30,7 +33,7 @@ for var in variables:
 
     lines_1, labels_1 = ax1.get_legend_handles_labels()
     lines_2, labels_2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper left', bbox_to_anchor=(1.05,1))
+    ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper left', bbox_to_anchor=(1.05, 1))
 
     ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
     fig.autofmt_xdate()
