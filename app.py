@@ -22,6 +22,7 @@ st.download_button(
     mime="text/csv"
 )
 
+
 uploaded_file = st.file_uploader("Upload your CSV file (date, itra_score)", type=["csv"])
 if uploaded_file:
     df = pd.read_csv(uploaded_file, parse_dates=["date"])
