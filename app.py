@@ -12,37 +12,43 @@ if uploaded_file:
 
     # 成長率の計算（前日比％）
     df['growth_rate'] = df['itra_score'].pct_change() * 100
+
+    # NaNを含む行を削除（成長率計算のため最初の行がNaNになる）
     df = df.dropna(subset=['growth_rate']).reset_index(drop=True)
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
-    fig.patch.set_facecolor('white')  # 背景は白
+
+    # 背景色を白に設定（Figure全体＆Axes両方）
+    fig.patch.set_facecolor('white')
+    ax1.set_facecolor('white')
 
     # ITRA Scoreの折れ線グラフ
     ax1.plot(df['date'], df['itra_score'], color='#1f77b4', label='ITRA Score')
     ax1.set_xlabel('Date')
     ax1.set_ylabel('ITRA Score', color='#1f77b4')
     ax1.tick_params(axis='y', labelcolor='#1f77b4')
-    ax1.tick_params(axis='x', rotation=45)  # ラベルを45度回転して見やすく
 
-    # y軸グリッドは消すけど、x軸はそのままにする
-    ax1.grid(False, axis='y')
+    # 横軸のグリッドは消すため非表示に
+    ax1.grid(False)
 
-    # 成長率の棒グラフ（右軸）
+    # 成長率は棒グラフで（負の成長も見やすく）
     ax2 = ax1.twinx()
-    width = pd.Timedelta(days=10)
+    ax2.set_facecolor('white')
+
+    width = pd.Timedelta(days=10)  # 日付軸に合わせた棒の幅
     ax2.bar(df['date'], df['growth_rate'], width=width, alpha=0.3, color='#ff7f0e', label='Growth Rate (%)')
+
     ax2.set_ylabel('Growth Rate (%)', color='#ff7f0e')
     ax2.tick_params(axis='y', labelcolor='#ff7f0e')
 
-    # 成長率側のy軸グリッドだけ表示
+    # 成長率軸のグリッドだけ表示
     ax2.grid(True, axis='y', linestyle='--', alpha=0.5)
 
-    # 凡例をグラフ外右上に
+    # 凡例をグラフ外右上に配置
     lines, labels = ax1.get_legend_handles_labels()
     bars, bar_labels = ax2.get_legend_handles_labels()
     ax1.legend(lines + bars, labels + bar_labels, loc='upper left', bbox_to_anchor=(1.05, 1))
 
-    fig.autofmt_xdate()  # 日付ラベルの整形
     plt.title('ITRA Score Transition & Growth Rate')
     plt.tight_layout()
 
