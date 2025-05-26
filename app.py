@@ -14,6 +14,8 @@ if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.subheader("📊 アップロードされたデータ")
     st.write(df)
+    
+    st.write(df['itra_score'].describe())
 
     # --- ITRAスコアの推移グラフ ---
     st.subheader("📈 ITRAスコアの推移")
