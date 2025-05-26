@@ -21,6 +21,11 @@ if uploaded_file is not None:
 
     st.pyplot(fig)
 
+    # 相関行列表示してみる（デバッグ用）
+    corr = df.corr()
+    st.write("Correlation matrix:")
+    st.write(corr)
+    
     # 相関行列のヒートマップ
     corr = df.corr()
     fig2, ax2 = plt.subplots(figsize=(8, 6))
