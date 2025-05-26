@@ -77,9 +77,13 @@ if uploaded_file is not None:
     # 予測と評価
     pred_time = model_time.predict(X_val)
     pred_score = model_score.predict(X_val)
+
+    # squared=False が使えないなら自分でsqrt取る
+    rmse_time = np.sqrt(mean_squared_error(y_time_val, pred_time))
+    rmse_score = np.sqrt(mean_squared_error(y_score_val, pred_score))
     
-    st.write("time_h RMSE:", mean_squared_error(y_time_val, pred_time, squared=False))
-    st.write("itra_score RMSE:", mean_squared_error(y_score_val, pred_score, squared=False))
+    st.write("time_h RMSE:", rmse_time)
+    st.write("itra_score RMSE:", rmse_score)
 
 else:
     st.info("👆 上のフォームからCSVファイルをアップロードしてください。")
