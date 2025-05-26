@@ -33,7 +33,7 @@ if csv_bytes:
     st.write("### Sample CSV Preview")
     st.dataframe(df_sample.head(3))
 
-uploaded_file = st.file_uploader("Upload your CSV file (date, itra_score)", type=["csv"])
+uploaded_file = st.file_uploader("### Upload your CSV file (date, itra_score)", type=["csv"])
 if uploaded_file:
     try:
         df = pd.read_csv(uploaded_file, parse_dates=["date"])
