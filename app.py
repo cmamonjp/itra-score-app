@@ -10,71 +10,74 @@ sample_csv_url = "https://raw.githubusercontent.com/cmamonjp/itra-score-app/main
 
 @st.cache_data
 def load_sample_csv():
-    r = requests.get(sample_csv_url)
-    return r.content
+    try:
+        r = requests.get(sample_csv_url)
+        r.raise_for_status()
+        return r.content
+    except requests.RequestException:
+        st.error("サンプルCSVのダウンロードに失敗しました。ネット接続を確認してね。")
+        return None
 
 csv_bytes = load_sample_csv()
 
-st.download_button(
-    label="Download Sample CSV",
-    data=csv_bytes,
-    file_name="data_itra_n30.csv",
-    mime="text/csv"
-)
-
+if csv_bytes:
+    st.download_button(
+        label="Download Sample CSV",
+        data=csv_bytes,
+        file_name="data_itra_n30.csv",
+        mime="text/csv"
+    )
 
 uploaded_file = st.file_uploader("Upload your CSV file (date, itra_score)", type=["csv"])
 if uploaded_file:
-    df = pd.read_csv(uploaded_file, parse_dates=["date"])
-    df = df.sort_values("date").reset_index(drop=True)
+    try:
+        df = pd.read_csv(uploaded_file, parse_dates=["date"])
+        if not {'date', 'itra_score'}.issubset(df.columns):
+            st.error("CSVファイルには 'date' と 'itra_score' の両方の列が必要です。")
+        else:
+            df = df.sort_values("date").reset_index(drop=True)
 
-    # 成長率の計算（前日比％）
-    df['growth_rate'] = df['itra_score'].pct_change() * 100
+            df['growth_rate'] = df['itra_score'].pct_change() * 100
+            df = df.dropna(subset=['growth_rate']).reset_index(drop=True)
 
-    # NaNを含む行を削除（最初の行）
-    df = df.dropna(subset=['growth_rate']).reset_index(drop=True)
+            fig, ax1 = plt.subplots(figsize=(10, 6))
+            fig.patch.set_facecolor('white')
+            ax1.set_facecolor('white')
 
-    fig, ax1 = plt.subplots(figsize=(10, 6))
+            ax1.plot(df['date'], df['itra_score'], color='#1f77b4', label='ITRA Score')
+            ax1.set_xlabel('Date', color='black')
+            ax1.set_ylabel('ITRA Score', color='#1f77b4')
+            ax1.tick_params(axis='x', colors='black')
+            ax1.tick_params(axis='y', labelcolor='#1f77b4')
 
-    # 白背景を明示的に指定
-    fig.patch.set_facecolor('white')
-    ax1.set_facecolor('white')
+            ax2 = ax1.twinx()
+            width = pd.Timedelta(days=10)
+            ax2.bar(df['date'], df['growth_rate'], width=width, alpha=0.3, color='#ff7f0e', label='Growth Rate (%)')
+            ax2.set_ylabel('Growth Rate (%)', color='#ff7f0e')
+            ax2.tick_params(axis='y', labelcolor='#ff7f0e')
 
-    # ITRA Scoreの折れ線グラフ
-    ax1.plot(df['date'], df['itra_score'], color='#1f77b4', label='ITRA Score')
-    ax1.set_xlabel('Date', color='black')
-    ax1.set_ylabel('ITRA Score', color='#1f77b4')
-    ax1.tick_params(axis='x', colors='black')
-    ax1.tick_params(axis='y', labelcolor='#1f77b4')
+            lines, labels = ax1.get_legend_handles_labels()
+            bars, bar_labels = ax2.get_legend_handles_labels()
+            leg = ax1.legend(lines + bars, labels + bar_labels, loc='upper left', bbox_to_anchor=(1.05, 1),
+                             frameon=True, facecolor='white', edgecolor='black')
+            for text in leg.get_texts():
+                text.set_color('black')
 
-    # 成長率は棒グラフで
-    ax2 = ax1.twinx()
-    width = pd.Timedelta(days=10)
-    ax2.bar(df['date'], df['growth_rate'], width=width, alpha=0.3, color='#ff7f0e', label='Growth Rate (%)')
-    ax2.set_ylabel('Growth Rate (%)', color='#ff7f0e')
-    ax2.tick_params(axis='y', labelcolor='#ff7f0e')
+            plt.title('ITRA Score Transition & Growth Rate', color='black')
+            plt.tight_layout()
 
-    # 凡例をグラフ外右上に配置、背景白、文字黒に変更
-    lines, labels = ax1.get_legend_handles_labels()
-    bars, bar_labels = ax2.get_legend_handles_labels()
-    leg = ax1.legend(lines + bars, labels + bar_labels, loc='upper left', bbox_to_anchor=(1.05, 1),
-                     frameon=True, facecolor='white', edgecolor='black')
-    for text in leg.get_texts():
-        text.set_color('black')
+            st.pyplot(fig)
 
-    plt.title('ITRA Score Transition & Growth Rate', color='black')
-    plt.tight_layout()
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", bbox_inches='tight', facecolor=fig.get_facecolor())
+            buf.seek(0)
 
-    st.pyplot(fig)
+            st.download_button(
+                label="Download Chart as PNG",
+                data=buf,
+                file_name="itra_score_growth.png",
+                mime="image/png"
+            )
 
-    # 画像ダウンロード用バッファ
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png", bbox_inches='tight', facecolor=fig.get_facecolor())
-    buf.seek(0)
-
-    st.download_button(
-        label="Download Chart as PNG",
-        data=buf,
-        file_name="itra_score_growth.png",
-        mime="image/png"
-    )
+    except Exception as e:
+        st.error(f"ファイルの読み込みまたは処理中にエラーが発生しました: {e}")
