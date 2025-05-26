@@ -28,6 +28,11 @@ if csv_bytes:
         mime="text/csv"
     )
 
+ # サンプルCSVのプレビュー表示
+        df_sample = pd.read_csv(io.BytesIO(csv_bytes), parse_dates=["date"])
+        st.write("### Sample CSV Preview")
+        st.dataframe(df_sample.head(10))
+
 uploaded_file = st.file_uploader("Upload your CSV file (date, itra_score)", type=["csv"])
 if uploaded_file:
     try:
