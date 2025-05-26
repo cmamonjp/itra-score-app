@@ -2,42 +2,42 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-st.title("🏃‍♂️ ITRAスコア成長率可視化アプリ")
+st.title("🏃‍♂️ ITRA Score Growth Rate Visualization")
 
-uploaded_file = st.file_uploader("📂 CSVファイルをアップロード", type="csv")
+uploaded_file = st.file_uploader("📂 Upload your CSV file", type="csv")
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     df['date'] = pd.to_datetime(df['date'])
     df = df.sort_values('date')
 
-    st.subheader("📊 アップロードされたデータ")
+    st.subheader("📊 Uploaded Data")
     st.dataframe(df)
 
-    # ITRAスコア推移プロット
-    st.subheader("📈 ITRAスコア推移")
+    # Plot ITRA score over time
+    st.subheader("📈 ITRA Score Over Time")
     fig, ax = plt.subplots(figsize=(12, 4))
     ax.plot(df['date'], df['itra_score'], marker='o')
-    ax.set_xlabel("日付")
-    ax.set_ylabel("ITRAスコア")
-    ax.set_title("ITRAスコアの推移")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("ITRA Score")
+    ax.set_title("ITRA Score Progression")
     plt.xticks(rotation=45)
     st.pyplot(fig)
 
-    # 成長率計算（前回比%）
-    df['itra_growth_rate'] = df['itra_score'].pct_change() * 100  # %変化率
+    # Calculate growth rate (percentage change from previous score)
+    df['itra_growth_rate'] = df['itra_score'].pct_change() * 100  # percentage
     df['itra_growth_rate'] = df['itra_growth_rate'].fillna(0)
 
-    st.subheader("📉 ITRAスコア成長率（前回比）")
+    st.subheader("📉 ITRA Score Growth Rate (Compared to Previous)")
     fig2, ax2 = plt.subplots(figsize=(12, 3))
     ax2.bar(df['date'], df['itra_growth_rate'], color='skyblue')
-    ax2.set_xlabel("日付")
-    ax2.set_ylabel("成長率 (%)")
-    ax2.set_title("ITRAスコア成長率の推移（前回比）")
+    ax2.set_xlabel("Date")
+    ax2.set_ylabel("Growth Rate (%)")
+    ax2.set_title("ITRA Score Growth Rate Over Time")
     plt.xticks(rotation=45)
     st.pyplot(fig2)
 
-    st.markdown("💡 成長率がプラスならパフォーマンス向上、マイナスなら低下を意味します。")
+    st.markdown("💡 A positive growth rate means improvement, while a negative one means performance decline.")
 
 else:
-    st.info("👆 まずはCSVファイルをアップロードしてください。")
+    st.info("👆 Please upload a CSV file to get started.")
