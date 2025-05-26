@@ -30,7 +30,7 @@ if csv_bytes:
 
     # サンプルCSVのプレビュー表示
     df_sample = pd.read_csv(io.BytesIO(csv_bytes), parse_dates=["date"])
-    st.write("## Sample CSV Preview")
+    st.write("### Sample CSV Preview")
     st.dataframe(df_sample.head(3))
 
 uploaded_file = st.file_uploader("Upload your CSV file (date, itra_score)", type=["csv"])
