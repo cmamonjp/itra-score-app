@@ -5,7 +5,6 @@ import lightgbm as lgb
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
-from datetime import datetime
 
 st.set_page_config(layout="wide")
 st.title("🏃‍♂️ ITRAスコア可視化＆予測アプリ")
@@ -19,6 +18,20 @@ if uploaded_file is not None:
 
     st.subheader("📊 アップロードされたデータ")
     st.dataframe(df)
+
+    # --- 基準日の設定（ユーザ入力可能） ---
+    st.subheader("⚙️ 基準日設定")
+    default_base_date = df['date'].min().date()
+    base_date = st.date_input("基準日を選択（ここからの日数を計算）", value=default_base_date, min_value=default_base_date)
+
+    # 基準日をDatetime型に変換
+    base_date = pd.to_datetime(base_date)
+
+    # --- days_since_base を再計算 ---
+    df['days_since_base'] = (df['date'] - base_date).dt.days
+    # マイナスの値があるなら警告表示（本来はないはず）
+    if (df['days_since_base'] < 0).any():
+        st.warning("⚠️ 基準日より前のレース日があります。基準日を見直してください。")
 
     # --- ITRAスコアの推移 ---
     st.subheader("📈 ITRAスコアの推移")
@@ -47,9 +60,8 @@ if uploaded_file is not None:
     # --- 特徴量加工 ---
     df['month'] = df['date'].dt.month
     df['dayofweek'] = df['date'].dt.dayofweek
-    df['days_since_start'] = (df['date'] - df['date'].min()).dt.days
 
-    features = ['distance', 'elevation', 'temp', 'course_condition', 'month', 'dayofweek', 'days_since_start']
+    features = ['distance', 'elevation', 'temp', 'course_condition', 'month', 'dayofweek', 'days_since_base']
     target_time = 'time_h'
     target_score = 'itra_score'
 
@@ -81,10 +93,13 @@ if uploaded_file is not None:
     # --- 予測フォーム ---
     st.subheader("🔮 次のレースの予測")
 
-    start_date = df['date'].min().date()
     with st.form("prediction_form"):
-        st.write(f"📅 初回レース日: {start_date}")
-        pred_date = st.date_input("📆 次のレース日を入力", value=start_date)
+        st.write(f"📅 基準日: {base_date.date()}")
+        pred_date = st.date_input(
+            "📆 次のレース日を入力（基準日以降）",
+            value=base_date.date(),
+            min_value=base_date.date()  # 基準日より前は選べない
+        )
         distance = st.number_input("距離 (km)", value=50)
         elevation = st.number_input("累積標高 (m)", value=2500)
         temp = st.number_input("気温 (℃)", value=20)
@@ -93,23 +108,22 @@ if uploaded_file is not None:
         submitted = st.form_submit_button("予測する")
 
     if submitted:
-        month = pred_date.month
-        dayofweek = pred_date.weekday()
-        days_since_start = (pred_date - start_date).days
+        pred_date = pd.to_datetime(pred_date)
+        days_since_base = (pred_date - base_date).days
 
         input_data = pd.DataFrame([{
             'distance': distance,
             'elevation': elevation,
             'temp': temp,
             'course_condition': course_condition,
-            'month': month,
-            'dayofweek': dayofweek,
-            'days_since_start': days_since_start
+            'month': pred_date.month,
+            'dayofweek': pred_date.weekday(),
+            'days_since_base': days_since_base
         }])
 
-        st.write("予測処理開始")
+        st.write("予測データ")
         st.write(input_data)
-        
+
         pred_time = model_time.predict(input_data)[0]
         pred_score = model_score.predict(input_data)[0]
 
