@@ -2,8 +2,25 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import io
+import requests
 
 st.title("🏃‍♂️ ITRA Score Transition & Growth Rate")
+
+sample_csv_url = "https://raw.githubusercontent.com/cmamonjp/itra-score-app/main/data_itra_n30.csv"
+
+@st.cache_data
+def load_sample_csv():
+    r = requests.get(sample_csv_url)
+    return r.content
+
+csv_bytes = load_sample_csv()
+
+st.download_button(
+    label="Download Sample CSV",
+    data=csv_bytes,
+    file_name="data_itra_n30.csv",
+    mime="text/csv"
+)
 
 uploaded_file = st.file_uploader("Upload your CSV file (date, itra_score)", type=["csv"])
 if uploaded_file:
