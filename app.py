@@ -5,6 +5,7 @@ import io
 import requests
 
 st.title("🏃‍♂️ ITRA Score Transition & Growth Rate")
+st.markdown("---")
 
 sample_csv_url = "https://raw.githubusercontent.com/cmamonjp/itra-score-app/main/data_itra_n30.csv"
 
