@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import lightgbm as lgb
 
 st.set_page_config(layout="wide")
 st.title("🏃‍♂️ ITRAスコア可視化＆分析アプリ")
@@ -44,5 +45,40 @@ if uploaded_file is not None:
     st.pyplot(fig2)
 
     st.markdown("💡 *ヒートマップは数値列のみを対象にしています。天気やコース状況は数値化が必要です。*")
+
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import mean_squared_error
+    
+    # 日付加工
+    df['date'] = pd.to_datetime(df['date'])
+    df['month'] = df['date'].dt.month
+    df['dayofweek'] = df['date'].dt.dayofweek
+    df['days_since_start'] = (df['date'] - df['date'].min()).dt.days
+    
+    features = ['distance', 'elevation', 'temp', 'course_condition', 'month', 'dayofweek', 'days_since_start']
+    target_time = 'time_h'
+    target_score = 'itra_score'
+    
+    X = df[features]
+    y_time = df[target_time]
+    y_score = df[target_score]
+    
+    # 同時に分割
+    X_train, X_val, y_time_train, y_time_val, y_score_train, y_score_val = train_test_split(X, y_time, y_score, test_size=0.2, random_state=42)
+    
+    # モデル学習
+    model_time = lgb.LGBMRegressor()
+    model_time.fit(X_train, y_time_train)
+    
+    model_score = lgb.LGBMRegressor()
+    model_score.fit(X_train, y_score_train)
+    
+    # 予測と評価
+    pred_time = model_time.predict(X_val)
+    pred_score = model_score.predict(X_val)
+    
+    st.write("time_h RMSE:", mean_squared_error(y_time_val, pred_time, squared=False))
+    st.write("itra_score RMSE:", mean_squared_error(y_score_val, pred_score, squared=False))
+
 else:
     st.info("👆 上のフォームからCSVファイルをアップロードしてください。")
