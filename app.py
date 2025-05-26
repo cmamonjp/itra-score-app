@@ -1,44 +1,50 @@
 import streamlit as st
 import pandas as pd
-import mplfinance as mpf
+import matplotlib.pyplot as plt
+import io
 
-st.title("🏃‍♂️ ITRA Score Growth Rate Candlestick Chart")
+st.title("🏃‍♂️ ITRA Score Transition & Growth Rate")
 
-# CSVアップロード
-uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+uploaded_file = st.file_uploader("Upload your CSV file (date, itra_score)", type=["csv"])
+if uploaded_file:
+    df = pd.read_csv(uploaded_file, parse_dates=["date"])
+    df = df.sort_values("date").reset_index(drop=True)
 
-if uploaded_file is not None:
-    # CSV読み込み
-    df = pd.read_csv(uploaded_file)
-    
-    # 日付型に変換
-    df['date'] = pd.to_datetime(df['date'], format='%Y/%m/%d')
-    df.set_index('date', inplace=True)
-    
-    # mplfinance用のOHLCデータ作成（仮にopen/high/low/closeをITRAスコアの成長率から作る）
-    # ここでは例として、前日との差分を元にcandlestick用に加工
-    df['close'] = df['itra_score']
-    df['open'] = df['itra_score'].shift(1)  # 前日のitra_score
-    df['high'] = df[['open', 'close']].max(axis=1)
-    df['low'] = df[['open', 'close']].min(axis=1)
+    # 成長率の計算（前日比％）
+    df['growth_rate'] = df['itra_score'].pct_change() * 100
 
-    # NaNがある行は削除（shiftで最初のopenがNaNになるため）
-    ohlc = df[['open', 'high', 'low', 'close']].dropna()
-    
-    # 描画
-    st.write("## Candlestick Chart")
-    fig, ax = mpf.plot(
-        ohlc,
-        type='candle',
-        style='charles',
-        figsize=(12,6),
-        title="ITRA Score Growth Rate Candlestick Chart",
-        ylabel="ITRA Score",
-        tight_layout=True,
-        returnfig=True,
-        show_nontrading=True
-    )
-    
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # ITRA Scoreの折れ線グラフ
+    ax1.plot(df['date'], df['itra_score'], color='#1f77b4', label='ITRA Score')
+    ax1.set_xlabel('Date')
+    ax1.set_ylabel('ITRA Score', color='#1f77b4')
+    ax1.tick_params(axis='y', labelcolor='#1f77b4')
+
+    # 成長率は棒グラフで（負の成長も見やすく）
+    ax2 = ax1.twinx()
+    ax2.bar(df['date'], df['growth_rate'], width=5, alpha=0.3, color='#ff7f0e', label='Growth Rate (%)')
+    ax2.set_ylabel('Growth Rate (%)', color='#ff7f0e')
+    ax2.tick_params(axis='y', labelcolor='#ff7f0e')
+
+    # 凡例をグラフ外右上に配置
+    lines, labels = ax1.get_legend_handles_labels()
+    bars, bar_labels = ax2.get_legend_handles_labels()
+    ax1.legend(lines + bars, labels + bar_labels, loc='upper left', bbox_to_anchor=(1.05, 1))
+
+    plt.title('ITRA Score Transition & Growth Rate')
+    plt.tight_layout()
+
     st.pyplot(fig)
-else:
-    st.info("CSVファイルをアップロードしてください。")
+
+    # 画像DL用バッファ
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches='tight')
+    buf.seek(0)
+
+    st.download_button(
+        label="Download Chart as PNG",
+        data=buf,
+        file_name="itra_score_growth.png",
+        mime="image/png"
+    )
