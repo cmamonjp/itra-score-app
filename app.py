@@ -1,73 +1,72 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-import numpy as np
-import io
 
-st.title("🏃‍♂️ ITRA Score Progress & Growth Rate Visualization")
+st.set_page_config(layout="wide")
+st.title("🏃‍♂️ ITRA Score Growth Visualization")
 
-uploaded_file = st.file_uploader("📂 Upload your CSV file", type="csv")
+uploaded_file = st.file_uploader("Upload your CSV file", type="csv")
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
-    df['date'] = pd.to_datetime(df['date'])
-    df = df.sort_values('date')
 
-    st.subheader("📊 Uploaded Data")
-    st.dataframe(df)
+    # 必須カラムチェック
+    required_cols = {'date', 'itra_score'}
+    if not required_cols.issubset(df.columns):
+        st.error(f"CSV must contain these columns: {', '.join(required_cols)}")
+    else:
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.sort_values('date')
 
-    df['itra_growth_rate'] = df['itra_score'].pct_change() * 100
-    df['itra_growth_rate'] = df['itra_growth_rate'].fillna(0)
+        # 日付範囲指定UI
+        min_date = df['date'].min()
+        max_date = df['date'].max()
+        date_range = st.date_input("Select date range", [min_date, max_date], min_value=min_date, max_value=max_date)
+        if len(date_range) == 2:
+            start_date, end_date = date_range
+            mask = (df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))
+            df = df.loc[mask]
 
-    fig, ax1 = plt.subplots(figsize=(12, 5))
+        if len(df) < 2:
+            st.warning("Not enough data in the selected date range to calculate growth rate.")
+        else:
+            df['growth_rate'] = df['itra_score'].pct_change() * 100
 
-    # ITRA Score line plot
-    ax1.plot(df['date'], df['itra_score'], marker='o', color='blue', label='ITRA Score')
-    ax1.set_xlabel("Date")
-    ax1.set_ylabel("ITRA Score", color='blue')
-    ax1.tick_params(axis='y', labelcolor='blue')
+            fig, ax = plt.subplots(figsize=(12, 5))
+            ax.plot(df['date'], df['itra_score'], marker='o', label='ITRA Score', color='#1f77b4')
+            ax.set_ylabel('ITRA Score', fontsize=12)
+            ax.grid(True, which='both', axis='y', linestyle='--', alpha=0.7)
+            ax.tick_params(axis='x', rotation=45)
+            ax.legend(loc='upper left', fontsize=10)
 
-    min_score = int(df['itra_score'].min() // 5 * 5)
-    max_score = int((df['itra_score'].max() + 4) // 5 * 5)
-    ax1.set_ylim(min_score, max_score)
-    ax1.yaxis.set_major_locator(ticker.MultipleLocator(5))
-    ax1.yaxis.set_minor_locator(ticker.MultipleLocator(1))
-    ax1.grid(which='major', axis='y', color='lightblue', linestyle='--', linewidth=0.8)
-    ax1.grid(which='minor', axis='y', color='lightblue', linestyle=':', linewidth=0.5)
+            ax2 = ax.twinx()
+            ax2.plot(df['date'], df['growth_rate'], marker='x', label='Growth Rate (%)', color='#2ca02c')
+            ax2.set_ylabel('Growth Rate (%)', fontsize=12)
+            ax2.legend(loc='upper right', fontsize=10)
 
-    # Growth rate bar plot with secondary y-axis in green
-    ax2 = ax1.twinx()
-    ax2.bar(df['date'], df['itra_growth_rate'], alpha=0.4, color='green', label='Growth Rate (%)')
-    ax2.set_ylabel("Growth Rate (%)", color='green')
-    ax2.tick_params(axis='y', labelcolor='green')
+            st.pyplot(fig)
 
-    ax2.set_ylim(-10, 10)
-    ax2.yaxis.set_major_locator(ticker.MultipleLocator(5))
-    ax2.yaxis.set_minor_locator(ticker.MultipleLocator(1))
-    ax2.grid(which='major', axis='y', color='lightgreen', linestyle='--', linewidth=0.8)
-    ax2.grid(which='minor', axis='y', color='lightgreen', linestyle=':', linewidth=0.5)
+            # 最初のNaNに対する説明
+            if pd.isna(df['growth_rate'].iloc[0]):
+                st.info("Note: The first growth rate value is undefined because there's no previous data point.")
 
-    plt.title("ITRA Score Progress and Growth Rate Over Time")
-    plt.xticks(rotation=45)
+            latest_growth = df['growth_rate'].iloc[-1]
 
-    lines, labels = ax1.get_legend_handles_labels()
-    bars, bar_labels = ax2.get_legend_handles_labels()
-    ax1.legend(lines + bars, labels + bar_labels, loc='upper left')
-
-    st.pyplot(fig)
-
-    # PNG download
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png', bbox_inches='tight')
-    buf.seek(0)
-
-    st.download_button(
-        label="Download Graph as PNG",
-        data=buf,
-        file_name="itra_score_growth.png",
-        mime="image/png"
-    )
+            # フィードバック文言バリエーション
+            if latest_growth > 5:
+                msg = f"🔥 Awesome! Your latest growth rate is {latest_growth:.2f}%. Keep the momentum going!"
+                st.success(msg)
+            elif latest_growth > 0:
+                msg = f"Good job! Your latest growth rate is {latest_growth:.2f}%. Keep it up!"
+                st.success(msg)
+            elif latest_growth < -5:
+                msg = f"⚠️ Warning: Your latest growth rate is {latest_growth:.2f}%. Consider reviewing your training plan seriously."
+                st.error(msg)
+            elif latest_growth < 0:
+                msg = f"Caution: Your latest growth rate is {latest_growth:.2f}%. Small setbacks happen; analyze and adjust."
+                st.warning(msg)
+            else:
+                st.info("Your growth rate is stable. Maintain your current efforts!")
 
 else:
-    st.info("👆 Please upload a CSV file to get started.")
+    st.info("Please upload a CSV file to get started.")
