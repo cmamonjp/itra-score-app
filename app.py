@@ -3,52 +3,48 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import io
 
-st.title("ITRA Score & Growth Rate Chart")
+st.title("🏃‍♂️ ITRA Score Transition & Growth Rate")
 
-uploaded_file = st.file_uploader("Upload your CSV file", type="csv")
-
+uploaded_file = st.file_uploader("Upload your CSV file (date, itra_score)", type=["csv"])
 if uploaded_file:
-    df = pd.read_csv(uploaded_file, parse_dates=['date'])
-    df.set_index('date', inplace=True)
+    df = pd.read_csv(uploaded_file, parse_dates=["date"])
+    df = df.sort_values("date").reset_index(drop=True)
 
-    # 成長率(%)
+    # 成長率の計算（前日比％）
     df['growth_rate'] = df['itra_score'].pct_change() * 100
 
-    fig, ax1 = plt.subplots(figsize=(12,6))
+    fig, ax1 = plt.subplots(figsize=(10, 6))
 
-    color_score = '#1f77b4'  # 青
-    color_growth = '#ff7f0e'  # オレンジ
-
-    # ITRAスコア 折れ線
-    ax1.plot(df.index, df['itra_score'], color=color_score, label='ITRA Score', linewidth=2)
+    # ITRA Scoreの折れ線グラフ
+    ax1.plot(df['date'], df['itra_score'], color='#1f77b4', label='ITRA Score')
     ax1.set_xlabel('Date')
-    ax1.set_ylabel('ITRA Score', color=color_score)
-    ax1.tick_params(axis='y', labelcolor=color_score)
+    ax1.set_ylabel('ITRA Score', color='#1f77b4')
+    ax1.tick_params(axis='y', labelcolor='#1f77b4')
 
-    # 右軸 Growth Rate 棒グラフ
+    # 成長率は棒グラフで（負の成長も見やすく）
     ax2 = ax1.twinx()
-    ax2.bar(df.index, df['growth_rate'], color=color_growth, alpha=0.6, label='Growth Rate (%)', width=5)
-    ax2.set_ylabel('Growth Rate (%)', color=color_growth)
-    ax2.tick_params(axis='y', labelcolor=color_growth)
+    ax2.bar(df['date'], df['growth_rate'], width=5, alpha=0.3, color='#ff7f0e', label='Growth Rate (%)')
+    ax2.set_ylabel('Growth Rate (%)', color='#ff7f0e')
+    ax2.tick_params(axis='y', labelcolor='#ff7f0e')
 
-    # 凡例は右枠外に
-    lines_1, labels_1 = ax1.get_legend_handles_labels()
-    lines_2, labels_2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper left', bbox_to_anchor=(1.05,1), borderaxespad=0.)
+    # 凡例をグラフ外右上に配置
+    lines, labels = ax1.get_legend_handles_labels()
+    bars, bar_labels = ax2.get_legend_handles_labels()
+    ax1.legend(lines + bars, labels + bar_labels, loc='upper left', bbox_to_anchor=(1.05, 1))
 
-    plt.title("ITRA Score and Growth Rate Over Time")
-    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.title('ITRA Score Transition & Growth Rate')
     plt.tight_layout()
 
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png', bbox_inches='tight')
-    buf.seek(0)
-
     st.pyplot(fig)
+
+    # 画像DL用バッファ
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches='tight')
+    buf.seek(0)
 
     st.download_button(
         label="Download Chart as PNG",
         data=buf,
-        file_name="itra_growth_chart.png",
+        file_name="itra_score_growth.png",
         mime="image/png"
     )
