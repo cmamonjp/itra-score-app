@@ -26,17 +26,21 @@ if uploaded_file is not None:
     # --- 相関ヒートマップ ---
     st.subheader("📐 相関分析ヒートマップ（数値列のみ）")
 
-    # 数値データだけを抽出（例：itra_score, distance, elevation, conditionなど）
-    numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
+    # --- 相関分析用の計算 ---
     cols_to_use = ['itra_score', 'distance', 'elevation', 'temp', 'time_h', 'course_condition']
     corr = df[cols_to_use].corr()
-    corr_itra = corr.loc[['itra_score'], :]
+
+    # --- ITRAスコアとの相関のみ抽出 ---
+    corr_itra = corr.loc['itra_score', :].drop('itra_score')  # itra_score自身は除外
 
     fig2, ax2 = plt.subplots(figsize=(8, 4))
-    corr_itra.plot(kind='bar', color='skyblue', ax=ax2)
+    bars = ax2.bar(corr_itra.index, corr_itra.values, color=['skyblue', 'salmon', 'limegreen', 'orange', 'purple'])
+    
     ax2.set_ylim(-1, 1)
     ax2.set_ylabel("Correlation with ITRA Score")
     ax2.set_title("ITRA Score vs Other Variables")
+    
+    plt.xticks(rotation=45, ha='right', fontsize=8)
     st.pyplot(fig2)
 
     st.markdown("💡 *ヒートマップは数値列のみを対象にしています。天気やコース状況は数値化が必要です。*")
