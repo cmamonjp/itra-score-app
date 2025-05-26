@@ -5,27 +5,8 @@ import matplotlib.dates as mdates
 
 plt.style.use('dark_background')
 
-# CSV読み込み（パスは適宜変更）
-df = pd.read_csv('path/to/your/data.csv')
-
-# date列を日時型に変換
-df['date'] = pd.to_datetime(df['date'])
-
-# ソート（必須）
-df = df.sort_values('date').reset_index(drop=True)
-
-variables = ['growth_rate', 'distance', 'elevation', 'temp', 'time_h']
-color_map = {
-    'growth_rate': '#d62728',
-    'distance': '#ff7f0e',
-    'elevation': '#2ca02c',
-    'temp': '#9467bd',
-    'time_h': '#8c564b'
-}
-
-for var in variables:
+def plot_dual_axis(df, var, color_map):
     fig, ax1 = plt.subplots(figsize=(10, 4))
-
     ax1.plot(df['date'], df['itra_score'], label='ITRA Score', color='#1f77b4', linewidth=2)
     ax1.set_ylabel('ITRA Score', color='#1f77b4')
     ax1.tick_params(axis='y', colors='#1f77b4')
@@ -44,4 +25,39 @@ for var in variables:
     fig.autofmt_xdate()
     plt.tight_layout()
 
-    st.pyplot(fig)
+    return fig
+
+def main():
+    st.title("ITRA Score & Variables Visualization")
+
+    uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=['csv'])
+    if not uploaded_file:
+        st.info("まずCSVファイルをアップロードしてください。")
+        return
+
+    df = pd.read_csv(uploaded_file)
+    df['date'] = pd.to_datetime(df['date'])
+    df = df.sort_values('date').reset_index(drop=True)
+
+    variables = ['growth_rate', 'distance', 'elevation', 'temp', 'time_h']
+    color_map = {
+        'growth_rate': '#d62728',
+        'distance': '#ff7f0e',
+        'elevation': '#2ca02c',
+        'temp': '#9467bd',
+        'time_h': '#8c564b'
+    }
+
+    # 表示変数選択
+    selected_vars = st.multiselect(
+        "表示する変数を選択してください (ITRA Scoreは常に表示されます)",
+        variables,
+        default=variables
+    )
+
+    for var in selected_vars:
+        fig = plot_dual_axis(df, var, color_map)
+        st.pyplot(fig)
+
+if __name__ == "__main__":
+    main()
