@@ -12,7 +12,8 @@ if uploaded_file is not None:
 
     fig, ax = plt.subplots()
     ax.plot(pd.to_datetime(df['date']), df['itra_score'], marker='o')
-    ax.set_title("ITRAスコアの推移")
-    ax.set_xlabel("日付")
-    ax.set_ylabel("ITRAスコア")
+    ax.set_title("ITRA Score Progress")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("ITRA Score")
+
     st.pyplot(fig)
