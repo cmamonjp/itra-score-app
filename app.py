@@ -29,7 +29,7 @@ if uploaded_file is not None:
 
     # 数値データだけを抽出（例：itra_score, distance, elevation, conditionなど）
     numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
-    corr_itra = corr.loc[['itra_score'], :]
+    corr = df[numeric_cols].corr()
 
     fig2, ax2 = plt.subplots(figsize=(8, 6))
     sns.heatmap(corr, annot=True, cmap='coolwarm', ax=ax2, fmt=".2f", vmin=-1, vmax=1)
