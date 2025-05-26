@@ -24,7 +24,7 @@ if uploaded_file is not None:
     st.pyplot(fig1)
 
     # --- 相関ヒートマップ ---
-    st.subheader("📐 相関分析ヒートマップ（数値列のみ）")
+    st.subheader("📐 相関分析")
 
     # --- 相関分析用の計算 ---
     cols_to_use = ['itra_score', 'temp', 'time_h', 'course_condition']
