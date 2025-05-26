@@ -3,10 +3,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-plt.style.use('dark_background')  # ここで一回だけ
+plt.style.use('dark_background')
 
-# dfの前処理例（必須）
+# CSV読み込み（パスは適宜変更）
+df = pd.read_csv('path/to/your/data.csv')
+
+# date列を日時型に変換
 df['date'] = pd.to_datetime(df['date'])
+
+# ソート（必須）
 df = df.sort_values('date').reset_index(drop=True)
 
 variables = ['growth_rate', 'distance', 'elevation', 'temp', 'time_h']
