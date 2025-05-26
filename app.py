@@ -5,20 +5,7 @@ import matplotlib.dates as mdates
 
 # データ読み込み・前処理は省略
 
-option = st.selectbox('右軸に表示するデータを選んでね', 
-                      ['growth_rate', 'distance', 'elevation', 'temp', 'time_h'])
-
-fig, ax1 = plt.subplots(figsize=(10,6))
-plt.style.use('dark_background')
-
-# 左軸：ITRA Score
-ax1.plot(df['date'], df['itra_score'], label='ITRA Score', color='#1f77b4', linewidth=2)
-ax1.set_ylabel('ITRA Score', color='#1f77b4')
-ax1.tick_params(axis='y', colors='#1f77b4')
-ax1.grid(True, linestyle='--', alpha=0.3)
-
-# 右軸：選択されたデータ
-ax2 = ax1.twinx()
+variables = ['growth_rate', 'distance', 'elevation', 'temp', 'time_h']
 color_map = {
     'growth_rate': '#d62728',
     'distance': '#ff7f0e',
@@ -26,17 +13,27 @@ color_map = {
     'temp': '#9467bd',
     'time_h': '#8c564b'
 }
-ax2.plot(df['date'], df[option], label=option.capitalize(), color=color_map[option], linestyle='-', linewidth=2)
-ax2.set_ylabel(option.capitalize(), color=color_map[option])
-ax2.tick_params(axis='y', colors=color_map[option])
 
-# 凡例は両方分表示（少し工夫が必要）
-lines_1, labels_1 = ax1.get_legend_handles_labels()
-lines_2, labels_2 = ax2.get_legend_handles_labels()
-ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper left', bbox_to_anchor=(1.05,1))
+for var in variables:
+    fig, ax1 = plt.subplots(figsize=(10,4))
+    plt.style.use('dark_background')
 
-ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-fig.autofmt_xdate()
-plt.tight_layout()
+    ax1.plot(df['date'], df['itra_score'], label='ITRA Score', color='#1f77b4', linewidth=2)
+    ax1.set_ylabel('ITRA Score', color='#1f77b4')
+    ax1.tick_params(axis='y', colors='#1f77b4')
+    ax1.grid(True, linestyle='--', alpha=0.3)
 
-st.pyplot(fig)
+    ax2 = ax1.twinx()
+    ax2.plot(df['date'], df[var], label=var.capitalize(), color=color_map[var], linewidth=2)
+    ax2.set_ylabel(var.capitalize(), color=color_map[var])
+    ax2.tick_params(axis='y', colors=color_map[var])
+
+    lines_1, labels_1 = ax1.get_legend_handles_labels()
+    lines_2, labels_2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper left', bbox_to_anchor=(1.05,1))
+
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    fig.autofmt_xdate()
+    plt.tight_layout()
+
+    st.pyplot(fig)
