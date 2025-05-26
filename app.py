@@ -5,11 +5,12 @@ import lightgbm as lgb
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
+from datetime import datetime
 
 st.set_page_config(layout="wide")
-st.title("🏃‍♂️ ITRAスコア可視化＆分析アプリ")
+st.title("🏃‍♂️ ITRAスコア可視化＆予測アプリ")
 
-# --- ファイルアップロード ---
+# --- CSVアップロード ---
 uploaded_file = st.file_uploader("📂 CSVファイルをアップロード", type="csv")
 
 if uploaded_file is not None:
@@ -17,13 +18,13 @@ if uploaded_file is not None:
     df['date'] = pd.to_datetime(df['date'])
 
     st.subheader("📊 アップロードされたデータ")
-    st.write(df)
+    st.dataframe(df)
 
     # --- ITRAスコアの推移 ---
     st.subheader("📈 ITRAスコアの推移")
-    fig1, ax1 = plt.subplots(figsize=(12, 5))
+    fig1, ax1 = plt.subplots(figsize=(12, 4))
     ax1.plot(df['date'], df['itra_score'], marker='o', color='blue')
-    ax1.set_title("ITRA Score Over Time", fontsize=14)
+    ax1.set_title("ITRA Score Over Time")
     ax1.set_xlabel("Date")
     ax1.set_ylabel("ITRA Score")
     plt.xticks(rotation=60, fontsize=8)
@@ -35,17 +36,15 @@ if uploaded_file is not None:
     corr = df[cols_to_use].corr()
     corr_itra = corr.loc['itra_score', :].drop('itra_score')
 
-    fig2, ax2 = plt.subplots(figsize=(8, 4))
-    bars = ax2.bar(corr_itra.index, corr_itra.values, color=['skyblue', 'salmon', 'limegreen'])
+    fig2, ax2 = plt.subplots(figsize=(6, 3))
+    ax2.bar(corr_itra.index, corr_itra.values, color=['skyblue', 'salmon', 'limegreen'])
     ax2.set_ylim(-1, 1)
-    ax2.set_ylabel("Correlation with ITRA Score")
-    ax2.set_title("ITRA Score vs Other Variables")
-    plt.xticks(rotation=45, ha='right', fontsize=8)
+    ax2.set_title("ITRA Score 相関")
     st.pyplot(fig2)
 
-    st.markdown("💡 *ヒートマップは数値列のみを対象にしています。天気やコース状況は数値化が必要です。*")
+    st.markdown("💡 *天気やコース状況など、数値化された項目に対して相関を表示しています。*")
 
-    # --- 特徴量追加と分割 ---
+    # --- 特徴量加工 ---
     df['month'] = df['date'].dt.month
     df['dayofweek'] = df['date'].dt.dayofweek
     df['days_since_start'] = (df['date'] - df['date'].min()).dt.days
@@ -58,7 +57,10 @@ if uploaded_file is not None:
     y_time = df[target_time]
     y_score = df[target_score]
 
-    X_train, X_val, y_time_train, y_time_val, y_score_train, y_score_val = train_test_split(X, y_time, y_score, test_size=0.2, random_state=42)
+    # --- 学習・予測 ---
+    X_train, X_val, y_time_train, y_time_val, y_score_train, y_score_val = train_test_split(
+        X, y_time, y_score, test_size=0.2, random_state=42
+    )
 
     model_time = lgb.LGBMRegressor()
     model_time.fit(X_train, y_time_train)
@@ -72,40 +74,44 @@ if uploaded_file is not None:
     rmse_time = np.sqrt(mean_squared_error(y_time_val, pred_time))
     rmse_score = np.sqrt(mean_squared_error(y_score_val, pred_score))
 
-    st.subheader("📉 モデル評価")
-    st.metric("⏱ time_h RMSE", f"{rmse_time:.2f} 時間")
-    st.metric("🏅 itra_score RMSE", f"{rmse_score:.2f} 点")
+    st.subheader("📉 モデル評価 (RMSE)")
+    st.markdown(f"- `⏱ time_h`: **{rmse_time:.2f} 時間**")
+    st.markdown(f"- `🎯 itra_score`: **{rmse_score:.2f} 点**")
 
-    # --- 入力インターフェイスで予測 ---
-    st.subheader("🎯 レース条件を入力して予測！")
+    # --- 予測フォーム ---
+    st.subheader("🔮 次のレースの予測")
 
+    start_date = df['date'].min().date()
     with st.form("prediction_form"):
+        st.write(f"📅 初回レース日: {start_date}")
+        pred_date = st.date_input("📆 次のレース日を入力", value=start_date)
         distance = st.number_input("距離 (km)", value=50)
         elevation = st.number_input("累積標高 (m)", value=2500)
         temp = st.number_input("気温 (℃)", value=20)
         course_condition = st.selectbox("コース状況", options=[0, 1], format_func=lambda x: "良好" if x == 0 else "悪路")
-        month = st.slider("月", 1, 12, 6)
-        dayofweek = st.selectbox("曜日（0=月, 6=日）", list(range(7)))
-        days_since_start = st.number_input("初回レースからの日数", value=100)
 
         submitted = st.form_submit_button("予測する")
 
     if submitted:
-        input_df = pd.DataFrame([{
-            "distance": distance,
-            "elevation": elevation,
-            "temp": temp,
-            "course_condition": course_condition,
-            "month": month,
-            "dayofweek": dayofweek,
-            "days_since_start": days_since_start
+        month = pred_date.month
+        dayofweek = pred_date.weekday()
+        days_since_start = (pred_date - start_date).days
+
+        input_data = pd.DataFrame([{
+            'distance': distance,
+            'elevation': elevation,
+            'temp': temp,
+            'course_condition': course_condition,
+            'month': month,
+            'dayofweek': dayofweek,
+            'days_since_start': days_since_start
         }])
 
-        pred_time_input = model_time.predict(input_df)[0]
-        pred_score_input = model_score.predict(input_df)[0]
+        pred_time = model_time.predict(input_data)[0]
+        pred_score = model_score.predict(input_data)[0]
 
-        st.success(f"⏱ 予測タイム: {pred_time_input:.2f} 時間")
-        st.success(f"🏅 予測ITRAスコア: {pred_score_input:.1f} 点")
+        st.success(f"⏱ 予測タイム: **{pred_time:.2f} 時間**")
+        st.success(f"🎯 予測ITRAスコア: **{pred_score:.0f} 点**")
 
 else:
     st.info("👆 上のフォームからCSVファイルをアップロードしてください。")
