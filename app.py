@@ -33,6 +33,11 @@ if uploaded_file is not None:
 
     fig2, ax2 = plt.subplots(figsize=(8, 6))
     sns.heatmap(corr, annot=True, cmap='coolwarm', ax=ax2, fmt=".2f", vmin=-1, vmax=1)
+    
+    ax2.set_xticklabels(ax2.get_xticklabels(), rotation=45, ha='right', fontsize=8)
+    ax2.set_yticklabels(ax2.get_yticklabels(), rotation=0, fontsize=8)
+
+    fig2.tight_layout()
     st.pyplot(fig2)
 
     st.markdown("💡 *ヒートマップは数値列のみを対象にしています。天気やコース状況は数値化が必要です。*")
