@@ -29,10 +29,12 @@ if uploaded_file is not None:
 
     # 数値データだけを抽出（例：itra_score, distance, elevation, conditionなど）
     numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
-    corr = df[numeric_cols].corr()
+    cols_to_use = ['itra_score', 'distance', 'elevation', 'temp', 'time_h', 'course_condition']
+    corr = df[cols_to_use].corr()
+    corr_itra = corr.loc[['itra_score'], :]
 
     fig2, ax2 = plt.subplots(figsize=(8, 6))
-    sns.heatmap(corr, annot=True, cmap='coolwarm', ax=ax2, fmt=".2f", vmin=-1, vmax=1)
+    sns.heatmap(corr_itra, annot=True, cmap='coolwarm', ax=ax2, fmt=".2f", vmin=-1, vmax=1)
     
     ax2.set_xticklabels(ax2.get_xticklabels(), rotation=45, ha='right', fontsize=8)
     ax2.set_yticklabels(ax2.get_yticklabels(), rotation=0, fontsize=8)
