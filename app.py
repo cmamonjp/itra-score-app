@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import lightgbm as lgb
+import numpy as np
 
 st.set_page_config(layout="wide")
 st.title("🏃‍♂️ ITRAスコア可視化＆分析アプリ")
