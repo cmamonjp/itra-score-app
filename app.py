@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 st.set_page_config(layout="wide")
 st.title("🏃‍♂️ ITRAスコア可視化＆分析アプリ")
@@ -33,13 +32,11 @@ if uploaded_file is not None:
     corr = df[cols_to_use].corr()
     corr_itra = corr.loc[['itra_score'], :]
 
-    fig2, ax2 = plt.subplots(figsize=(8, 6))
-    sns.heatmap(corr_itra, annot=True, cmap='coolwarm', ax=ax2, fmt=".2f", vmin=-1, vmax=1)
-    
-    ax2.set_xticklabels(ax2.get_xticklabels(), rotation=45, ha='right', fontsize=8)
-    ax2.set_yticklabels(ax2.get_yticklabels(), rotation=0, fontsize=8)
-
-    fig2.tight_layout()
+    fig2, ax2 = plt.subplots(figsize=(8, 4))
+    corr_itra.plot(kind='bar', color='skyblue', ax=ax2)
+    ax2.set_ylim(-1, 1)
+    ax2.set_ylabel("Correlation with ITRA Score")
+    ax2.set_title("ITRA Score vs Other Variables")
     st.pyplot(fig2)
 
     st.markdown("💡 *ヒートマップは数値列のみを対象にしています。天気やコース状況は数値化が必要です。*")
