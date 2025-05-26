@@ -28,7 +28,7 @@ if csv_bytes:
         mime="text/csv"
     )
 
- # サンプルCSVのプレビュー表示
+    # サンプルCSVのプレビュー表示
     df_sample = pd.read_csv(io.BytesIO(csv_bytes), parse_dates=["date"])
     st.write("### Sample CSV Preview")
     st.dataframe(df_sample.head(10))
